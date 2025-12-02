@@ -47,7 +47,7 @@ pipeline {
             // Run the deployment script
             sh """
             ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
-                cd ${DEPLOY_PATH} &&
+                cd ${/opt/demo-app} &&
                 chmod +x deploy.sh &&
                 ./deploy.sh
             '
