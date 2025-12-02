@@ -12,22 +12,14 @@ pipeline {
             }
         }
 
-        stage('Copy deployment YAML to workspace') {
-            steps {
-                echo "Copying deploy.yml to workspace..."
-                sh 'cp deploy.yml "$WORKSPACE"'
-            }
-        }
-
         stage('SSH into EC2') {
             steps {
-                echo "Connecting to EC2 using Jenkins credentials..."
-
-                sh '''
-                ssh -o StrictHostKeyChecking=no ubuntu@16.176.176.106 '
-                    echo "Connected to EC2 Instance"
-                '
-                '''
+                echo "Connecting to EC2 (test only)..."
+                sshagent(['virendra-jenkins']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ubuntu@16.176.176.106 "echo Connected Successfully"
+                    '''
+                }
             }
         }
 
@@ -50,12 +42,11 @@ pipeline {
 
         stage('Validate Deployment') {
             steps {
-                echo "Validating application..."
-
                 sshagent(['virendra-jenkins']) {
                     sh '''
                     ssh -o StrictHostKeyChecking=no ubuntu@16.176.176.106 "
-                        curl -s localhost || echo 'curl failed but instance is reachable'
+                        echo 'Deployment files:'
+                        ls -l /opt/demo-app/
                     "
                     '''
                 }
@@ -64,7 +55,7 @@ pipeline {
 
         stage('Success Message') {
             steps {
-                echo "🎉 Deployment Successful! App deployed to EC2: 16.176.176.106"
+                echo "🎉 Deployment Successful!"
             }
         }
     }
