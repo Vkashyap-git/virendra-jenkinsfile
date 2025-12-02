@@ -18,7 +18,7 @@ pipeline {
         stage('Copy deployment YAML to workspace') {
             steps {
                 echo "Copying deploy.yml to workspace..."
-                sh 'cp deploy.yml $WORKSPACE/'
+                sh 'cp deploy.yml "$WORKSPACE/"'
             }
         }
 
