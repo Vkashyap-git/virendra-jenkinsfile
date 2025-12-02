@@ -1,51 +1,48 @@
 pipeline {
     agent any
 
-    environment {
-        EC2_USER = "ubuntu"
-        EC2_HOST = "16.176.176.106"
-    }
-
     stages {
 
         stage('Git Checkout') {
             steps {
-                echo "Pulling code from repository..."
-                checkout scm
+                echo "Cloning repository..."
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/Vkashyap-git/virendra-jenkinsfile.git']]
+                ])
             }
         }
 
         stage('Copy deployment YAML to workspace') {
             steps {
                 echo "Copying deploy.yml to workspace..."
-                sh 'cp deploy.yml "$WORKSPACE/"'
+                sh 'cp deploy.yml "$WORKSPACE"'
             }
         }
 
-        stage('Test SSH Connection to EC2') {
+        stage('SSH into EC2') {
             steps {
-                echo "Connecting to EC2 using saved Jenkins credentials..."
-                sshagent(credentials: ['virendra-jenkins']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "echo EC2 connected successfully!"
-                    '''
-                }
+                echo "Connecting to EC2 using Jenkins credentials..."
+
+                sh '''
+                ssh -o StrictHostKeyChecking=no ubuntu@16.176.176.106 '
+                    echo "Connected to EC2 Instance"
+                '
+                '''
             }
         }
 
-        stage('Deploy to EC2') {
+        stage('Deploy Application') {
             steps {
-                echo "Uploading deploy.yml and executing deployment..."
-                sshagent(credentials: ['virendra-jenkins']) {
-                    sh '''
-                        scp -o StrictHostKeyChecking=no $WORKSPACE/deploy.yml $EC2_USER@$EC2_HOST:/tmp/deploy.yml
+                echo "Deploying app to EC2..."
 
-                        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "sudo bash -s" << 'EOF'
-                        # Convert YAML to commands manually (simple execution)
-                        sudo mkdir -p /opt/demo-app
-                        sudo cp /tmp/deploy.yml /opt/demo-app/
-                        echo "YAML copied to /opt/demo-app"
-                        EOF
+                sshagent(['virendra-jenkins']) {
+                    sh '''
+                    scp -o StrictHostKeyChecking=no deploy.yml ubuntu@16.176.176.106:/home/ubuntu/
+
+                    ssh -o StrictHostKeyChecking=no ubuntu@16.176.176.106 '
+                        sudo mkdir -p /opt/demo-app &&
+                        sudo cp /home/ubuntu/deploy.yml /opt/demo-app/
+                    '
                     '''
                 }
             }
@@ -53,18 +50,21 @@ pipeline {
 
         stage('Validate Deployment') {
             steps {
-                echo "Validating the application on EC2..."
-                sshagent(credentials: ['virendra-jenkins']) {
+                echo "Validating application..."
+
+                sshagent(['virendra-jenkins']) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "curl -I localhost || echo 'App may not be running'"
+                    ssh -o StrictHostKeyChecking=no ubuntu@16.176.176.106 "
+                        curl -s localhost || echo 'curl failed but instance is reachable'
+                    "
                     '''
                 }
             }
         }
 
-        stage('Success') {
+        stage('Success Message') {
             steps {
-                echo "🚀 Deployment Pipeline Completed Successfully!"
+                echo "🎉 Deployment Successful! App deployed to EC2: 16.176.176.106"
             }
         }
     }
