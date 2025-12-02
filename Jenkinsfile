@@ -12,10 +12,9 @@ pipeline {
         stage('Copy Deployment Script to Workspace') {
             steps {
                 sh '''
-                https://github.com/Calance-US/calance-services-jenkinsfiles.git
-                    echo "Copying deployment script..."
-                    cp scripts/EC2-Deployment-Dashboard .
-                    chmod +x EC2-Deployment-Dashboard
+                "git clone https://github.com/Calance-US/calance-services-jenkinsfiles.git"
+                    echo "Copying deployment script"
+                    cp scripts/deploy.sh .
                 '''
             }
         }
@@ -37,7 +36,6 @@ pipeline {
                     sh """
                         echo "Transferring script to EC2..."
                         scp -o StrictHostKeyChecking=no deploy.sh ${EC2_USER}@${EC2_HOST}:/tmp/deploy.sh
-
                         echo "Running deployment script on EC2..."
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
                             sudo chmod +x /tmp/deploy.sh &&
