@@ -1,0 +1,12 @@
+app:
+  directory: "/opt/demo-app"
+
+steps:
+  - name: Create application directory
+    run: "sudo mkdir -p /opt/demo-app"
+
+  - name: Copy YAML file into the directory
+    run: "sudo cp /tmp/deploy.yml /opt/demo-app/"
+
+  - name: Print completion message
+    run: "echo 'Deployment YAML executed successfully!'"
